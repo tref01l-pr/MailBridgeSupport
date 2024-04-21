@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AutoMapper" Version="13.0.1" />
+        <PackageReference Include="JWT" Version="10.1.1" />
+        <PackageReference Include="MailKit" Version="4.5.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.4">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.4" />
+        <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Contracts\" />
+      <Folder Include="Controllers\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MailBridgeSupport.Application\MailBridgeSupport.Application.csproj" />
+      <ProjectReference Include="..\MailBridgeSupport.DataAccess.SqlServer\MailBridgeSupport.DataAccess.SqlServer.csproj" />
+      <ProjectReference Include="..\MailBridgeSupport.Domain\MailBridgeSupport.Domain.csproj" />
+      <ProjectReference Include="..\MailBridgeSupport.Infrastructure\MailBridgeSupport.Infrastructure.csproj" />
+    </ItemGroup>
+
+</Project>
