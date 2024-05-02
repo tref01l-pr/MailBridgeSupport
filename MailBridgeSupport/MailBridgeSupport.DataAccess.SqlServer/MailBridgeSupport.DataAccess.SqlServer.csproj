@@ -27,8 +27,6 @@
 
     <ItemGroup>
       <Folder Include="Configurations\" />
-      <Folder Include="Entities\" />
-      <Folder Include="Repositories\" />
     </ItemGroup>
 
     <ItemGroup>
