@@ -33,6 +33,7 @@ public class SmtpAndImapController : BaseController
         _smtpService = smtpService;
     }
 
+    [Authorize]
     [HttpGet("/getHeaders")]
     public async Task<IActionResult> GetHeaders()
     {
@@ -40,18 +41,16 @@ public class SmtpAndImapController : BaseController
         var result = headers.Authorization;
         return Ok("Success");
     }
-    
+
     [Authorize]
     [HttpGet("/getMessages")]
     public async Task<IActionResult> GetMessages()
     {
-        
         var result = await _imapService.GetMessagesAsync(_imapOptions);
         if (result.IsFailure)
         {
             return BadRequest(result.Error);
         }
-
 
 
         List<valueToResult> valueToResults = new List<valueToResult>();
@@ -66,6 +65,7 @@ public class SmtpAndImapController : BaseController
                 mimeMessage.Date
             ));
         }
+
         return Ok(valueToResults);
     }
 
@@ -80,7 +80,7 @@ public class SmtpAndImapController : BaseController
 
         return Ok("everything was sent");
     }
-    
+
     [HttpGet("/getMessageByUsers")]
     public async Task<IActionResult> GetMessageByUsers()
     {
@@ -89,8 +89,8 @@ public class SmtpAndImapController : BaseController
         {
             return BadRequest(resultMessages.Error);
         }
-        
-        
+
+
         return Ok(resultMessages.Value);
     }
 }
@@ -102,9 +102,10 @@ class valueToResult
     public string Subject { get; set; } = string.Empty;
     public string BodyParts { get; set; } = string.Empty;
     public DateTimeOffset Date { get; set; } = DateTimeOffset.Now;
-    
 
-    public valueToResult(IEnumerable<MailboxAddress> fromMailboxes, IEnumerable<MailboxAddress> toMailboxes, string mimeMessageSubject, string mimeMessageTextBody, DateTimeOffset mimeMessageDate)
+
+    public valueToResult(IEnumerable<MailboxAddress> fromMailboxes, IEnumerable<MailboxAddress> toMailboxes,
+        string mimeMessageSubject, string mimeMessageTextBody, DateTimeOffset mimeMessageDate)
     {
         foreach (var mailboxAddress in fromMailboxes)
         {
@@ -115,11 +116,11 @@ class valueToResult
         {
             To.Add(mailboxAddress.Address);
         }
-        
+
         Subject = mimeMessageSubject;
 
         BodyParts = mimeMessageTextBody;
-        
+
         Date = mimeMessageDate;
     }
 }
@@ -131,7 +132,8 @@ class ValueToResult
     public BodyPartText BodyParts { get; set; }
     public DateTimeOffset Date { get; set; } = DateTimeOffset.Now;
 
-    public ValueToResult(string mimeMessageKey, string valueNormalizedSubject, BodyPartText mimeMessageSubject, DateTimeOffset mimeMessageTextBody)
+    public ValueToResult(string mimeMessageKey, string valueNormalizedSubject, BodyPartText mimeMessageSubject,
+        DateTimeOffset mimeMessageTextBody)
     {
         From = mimeMessageKey;
         Subject = valueNormalizedSubject;
