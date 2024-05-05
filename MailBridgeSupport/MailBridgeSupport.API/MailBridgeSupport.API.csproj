@@ -10,7 +10,9 @@
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="13.0.1" />
-        <PackageReference Include="JWT" Version="10.1.1" />
+        <PackageReference Include="JWT" Version="11.0.0-beta2" />
+        <PackageReference Include="JWT.Extensions.AspNetCore" Version="11.0.0-beta3" />
+        <PackageReference Include="JWT.Extensions.DependencyInjection" Version="3.0.0-beta2" />
         <PackageReference Include="MailKit" Version="4.5.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0"/>

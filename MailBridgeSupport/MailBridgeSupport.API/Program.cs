@@ -1,9 +1,6 @@
-using Microsoft.Net.Http.Headers;
-
 namespace MailBridgeSupport.API;
 
 using System.Text;
-using System.Text.Json.Serialization;
 using MailBridgeSupport.Application.Services;
 using MailBridgeSupport.DataAccess.SqlServer;
 using MailBridgeSupport.DataAccess.SqlServer.Entities;
@@ -36,53 +33,43 @@ public class Program
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddHttpContextAccessor();
+        //builder.Services.AddHttpContextAccessor();
 
-        /*builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+        builder.Services.AddSwaggerGen(options =>
         {
-            options.TokenValidationParameters = new TokenValidationParameters
+            options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
             {
-                ValidateIssuerSigningKey = true,
-                ValidateAudience = false,
-                ValidateIssuer = false,
-                ValidateLifetime = true,
-                IssuerSigningKey =
-                    new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration.GetSection("JWTSecret:Secret").Value!)),
-            };
-        });*/
-        
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                NameClaimType = "name",
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("JWTSecret:Secret").Value))
-            };
+                In = ParameterLocation.Header,
+                Name = "Authorization",
+                Type = SecuritySchemeType.ApiKey,
+            });
+
+            options.OperationFilter<SecurityRequirementsOperationFilter>();
         });
 
-        builder.Services.AddAuthorization();
+        builder.Services.AddDbContext<MailBridgeSupportDbContext>(options =>
+            options.UseSqlServer(
+                builder.Configuration.GetConnectionString("MailBridgeSupportDbContext"),
+                x => x.MigrationsAssembly("MailBridgeSupport.DataAccess.SqlServer")));
 
-        builder.Services.AddDetection();
-
-        builder.Services.AddScoped<IImapService, ImapService>();
-        builder.Services.AddScoped<ISmtpService, SmtpService>();
-        builder.Services.AddScoped<ISentMessagesRepository, SentMessagesRepository>();
-        builder.Services.AddScoped<ISessionsRepository, SessionsRepository>();
-        builder.Services.AddScoped<IUsersRepository, UsersRepository>();
-        builder.Services.AddScoped<IClientMessagesService, ClientMessagesService>();
-        builder.Services.AddScoped<IModeratorsService, ModeratorsService>();
-        builder.Services.AddScoped<ISentMessagesService, SentMessagesService>();
-        builder.Services.AddScoped<ISystemAdminsService, SystemAdminsService>();
 
         builder.Services
-            .AddIdentityCore<UserEntity>()
-            .AddRoles<IdentityRole<Guid>>()
-            .AddEntityFrameworkStores<MailBridgeSupportDbContext>();
+            .AddIdentity<UserEntity, IdentityRole<Guid>>(options =>
+            {
+                options.User.RequireUniqueEmail = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireDigit = false;
+                options.Password.RequireUppercase = false;
+            })
+            .AddEntityFrameworkStores<MailBridgeSupportDbContext>()
+            .AddDefaultTokenProviders();
+        
+        builder.Services.Configure<IdentityOptions>(options =>
+        {
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromSeconds(30);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = true;
+        });
 
         builder.Services.AddAutoMapper(config =>
         {
@@ -90,50 +77,40 @@ public class Program
             config.AddProfile<DataAccessMappingProfile>();
         });
 
-        
-        /*builder.Services.AddSwaggerGen(c =>
-        {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Test01", Version = "v1" });
+        builder.Services.AddScoped<IImapService, ImapService>();
+        builder.Services.AddScoped<ISmtpService, SmtpService>();
+        builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
+        builder.Services.AddScoped<ISentMessagesRepository, SentMessagesRepository>();
+        builder.Services.AddScoped<ISessionsRepository, SessionsRepository>();
+        builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+        builder.Services.AddScoped<IClientMessagesService, ClientsService>();
+        builder.Services.AddScoped<ISentMessagesService, SentMessagesService>();
+        builder.Services.AddScoped<ISystemAdminsService, SystemAdminsService>();
 
-            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
-            {
-                Name = "Authorization",
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer",
-                BearerFormat = "JWT",
-                In = ParameterLocation.Header,
-                Description = "JWT Authorization header using the Bearer scheme."
 
-            });
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        builder.Services.AddAuthentication(options =>
             {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters()
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    new string[] {}
-                }
-            });
-        });*/
-        
-        /*builder.Services.AddSwaggerGen(options =>
-        {
-            options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
-            {
-                In = ParameterLocation.Header,
-                Name = "Authorization",
-                Type = SecuritySchemeType.ApiKey
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey =
+                        new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration.GetSection("JWTSecret:Secret").Value!)),
+                };
             });
 
-            options.OperationFilter<SecurityRequirementsOperationFilter>();
-        });*/
-
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddAuthorization();
 
         builder.Services.AddCors(options =>
         {
@@ -147,10 +124,6 @@ public class Program
             });
         });
 
-        builder.Services.AddDbContext<MailBridgeSupportDbContext>(options =>
-            options.UseSqlServer(
-                builder.Configuration.GetConnectionString("MailBridgeSupportDbContext"),
-                x => x.MigrationsAssembly("MailBridgeSupport.DataAccess.SqlServer")));
 
         var app = builder.Build();
 

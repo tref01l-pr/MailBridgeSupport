@@ -5,6 +5,7 @@ namespace MailBridgeSupport.Domain.Models;
 
 public class SentMessage
 {
+    public const int MaxEmailLength = 320;
     public const int MaxSubjectLength = 500;
     public const int MaxBodyLength = 1500;
     private SentMessage(
@@ -49,7 +50,7 @@ public class SentMessage
         {
             failure = Result.Combine(
                 failure,
-                Result.Failure<SentMessage>($"SmtpMessage {nameof(to)} can't be null or white space"));
+                Result.Failure<SentMessage>($"SentMessage {nameof(to)} can't be null or white space"));
         }
         else if (!IsValidEmail(to))
         {
@@ -57,31 +58,37 @@ public class SentMessage
                 failure,
                 Result.Failure<SentMessage>($"Email is incorrect"));
         }
+        else if (to.Length > MaxEmailLength)
+        {
+            failure = Result.Combine(
+                failure,
+                Result.Failure<SentMessage>($"SentMessage {nameof(to)} can`t be more than {MaxEmailLength} chars"));
+        }
 
         if (string.IsNullOrWhiteSpace(subject))
         {
             failure = Result.Combine(
                 failure,
-                Result.Failure<SentMessage>($"SmtpMessage {nameof(subject)} can't be null or white space"));
+                Result.Failure<SentMessage>($"SentMessage {nameof(subject)} can't be null or white space"));
         }
         else if (subject.Length > MaxSubjectLength)
         {
             failure = Result.Combine(
                 failure,
-                Result.Failure<SentMessage>($"Course {nameof(subject)} can`t be more than {MaxSubjectLength} chars"));
+                Result.Failure<SentMessage>($"SentMessage {nameof(subject)} can`t be more than {MaxSubjectLength} chars"));
         }
         
         if (string.IsNullOrWhiteSpace(body))
         {
             failure = Result.Combine(
                 failure,
-                Result.Failure<SentMessage>($"SmtpMessage {nameof(body)} can't be null or white space"));
+                Result.Failure<SentMessage>($"SentMessage {nameof(body)} can't be null or white space"));
         }
         else if (body.Length > MaxBodyLength)
         {
             failure = Result.Combine(
                 failure,
-                Result.Failure<SentMessage>($"Course {nameof(body)} can`t be more than {MaxBodyLength} chars"));
+                Result.Failure<SentMessage>($"SentMessage {nameof(body)} can`t be more than {MaxBodyLength} chars"));
         }
 
         if (failure.IsFailure)

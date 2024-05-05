@@ -5,6 +5,7 @@ namespace MailBridgeSupport.Domain.Models;
 public class MailAdmin
 {
     public const int MaxLengthNickname = 50;
+    public const int MaxEmailLength = 320;
 
     private MailAdmin(Guid courseAdminId, string nickname)
     {

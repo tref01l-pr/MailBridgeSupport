@@ -44,7 +44,7 @@ public class ImapService : IImapService
         }
     }
 
-    public async Task<Result<List<ImapMessage>>> GetLastMessageFromUsers(ImapOptions imapOptions)
+    public async Task<Result<List<ImapMessage>>> GetLastMessage(ImapOptions imapOptions)
     {
         try
         {
@@ -69,14 +69,20 @@ public class ImapService : IImapService
                     if (!string.IsNullOrEmpty(sender) && !latestMessagesByUser.Any(m => m.From == sender))
                     {
                         var text = (TextPart)(await inbox.GetBodyPartAsync(message.UniqueId, message.TextBody));
-                        latestMessagesByUser.Add(new ImapMessage()
+                        var imapMessage = ImapMessage.Create(
+                            message.Envelope.From.Mailboxes.Single().Address,
+                            message.Envelope.From.Mailboxes.Single().Address,
+                            message.Envelope.Subject,
+                            text.Text,
+                            message.Date,
+                            SentMessageStatus.Question);
+
+                        if (imapMessage.IsFailure)
                         {
-                            UniqueId = message.UniqueId.ToString(),
-                            To = message.Envelope.To.Mailboxes.Single().Address,
-                            From = message.Envelope.From.Mailboxes.Single().Address,
-                            Date = message.Date,
-                            Body = text.Text
-                        });
+                            return Result.Failure<List<ImapMessage>>(imapMessage.Error);
+                        }
+
+                        latestMessagesByUser.Add(imapMessage.Value);
                     }
                 }
                 
@@ -91,6 +97,59 @@ public class ImapService : IImapService
             return Result.Failure<List<ImapMessage>>(e.Message);
         }
         
+    }
+
+    public async Task<Result<List<ImapMessage>>> GetMessagesFromRequester(ImapOptions imapOptions, string email)
+    {
+        try
+        {
+            using (var client = new ImapClient ()) {
+
+                await client.ConnectAsync("imap.gmail.com", imapOptions.Port, true);
+                await client.AuthenticateAsync(imapOptions.User, imapOptions.Password);
+
+                var inbox = client.Inbox;
+                await inbox.OpenAsync(FolderAccess.ReadOnly);
+
+                var allMessages = 
+                    (await inbox.FetchAsync(0, -1, MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure))
+                    .Where(m => m.Envelope.From.Mailboxes.Single().Address == email)
+                    .OrderByDescending(summary => summary.Date);
+
+                if (!allMessages.Any())
+                {
+                    return Result.Failure<List<ImapMessage>>("There is no lists from that email");
+                }
+
+                var userMessages = new List<ImapMessage>();
+
+                foreach (var message in allMessages)
+                {
+                    var text = (TextPart)(await inbox.GetBodyPartAsync(message.UniqueId, message.TextBody));
+                    var imapMessage = ImapMessage.Create(
+                        message.Envelope.From.Mailboxes.Single().Address,
+                        message.Envelope.From.Mailboxes.Single().Address,
+                        message.Envelope.Subject,
+                        text.Text,
+                        message.Date,
+                        SentMessageStatus.Question);
+
+                    if (imapMessage.IsFailure)
+                    {
+                        return Result.Failure<List<ImapMessage>>(imapMessage.Error);
+                    }
+
+                    userMessages.Add(imapMessage.Value);
+                }
+
+                await client.DisconnectAsync(true);
+                return userMessages;
+            }
+        }
+        catch (Exception e)
+        {
+            return Result.Failure<List<ImapMessage>>(e.Message);
+        }
     }
 
     public async Task<Result<List<string>>> GetMessagesBody(ImapOptions imapOptions, Dictionary<string, IMessageSummary> allMessages)

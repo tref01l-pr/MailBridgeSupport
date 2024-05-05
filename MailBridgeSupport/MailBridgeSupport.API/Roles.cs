@@ -3,6 +3,5 @@
 public enum Roles
 {
     SystemAdmin,
-    Moderator,
     User
 }

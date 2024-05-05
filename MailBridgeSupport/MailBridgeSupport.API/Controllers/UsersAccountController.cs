@@ -88,60 +88,6 @@ public class UsersAccountController : BaseController
 
             return Ok(true);
         }
-        
-        /// <summary>
-        /// Moderator registration.
-        /// </summary>
-        /// <param name="request">Nickname, email and password.</param>
-        /// <returns>Success.</returns>
-        [AllowAnonymous]
-        [HttpPost("moderator/registration")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> RegistrationModerator(
-            [FromBody] MailAdminRegistrationRequest request)
-        {
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user is null)
-            {
-                var newUser = new UserEntity
-                {
-                    UserName = request.Nickname,
-                    Email = request.Email,
-                };
-
-                var result = await _userManager.CreateAsync(
-                    newUser,
-                    request.Password);
-
-                if (!result.Succeeded)
-                {
-                    _logger.LogError("{errors}", result.Errors);
-                    return BadRequest(result.Errors);
-                }
-
-                var roleExists = await _roleManager.RoleExistsAsync(nameof(Roles.Moderator));
-                if (!roleExists)
-                {
-                    var role = new IdentityRole<Guid>()
-                    {
-                        Name = nameof(Roles.User)
-                    };
-
-                    await _roleManager.CreateAsync(role);
-                }
-
-                await _userManager.AddToRoleAsync(newUser, nameof(Roles.Moderator));
-            }
-            else
-            {
-                var error = "User is existing.";
-                _logger.LogError("{error}", error);
-                return BadRequest(error);
-            }
-
-            return Ok(true);
-        }
 
         /// <summary>
         /// User registration.
@@ -259,6 +205,7 @@ public class UsersAccountController : BaseController
             {
                 Role = role,
                 AccessToken = accessToken,
+                RefreshToken = refreshToken,
                 Nickname = user.UserName
             });
         }

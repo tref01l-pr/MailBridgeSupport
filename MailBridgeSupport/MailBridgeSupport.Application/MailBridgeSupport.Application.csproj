@@ -16,11 +16,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Dtos\" />
+      <ProjectReference Include="..\MailBridgeSupport.Domain\MailBridgeSupport.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\MailBridgeSupport.Domain\MailBridgeSupport.Domain.csproj" />
+      <Folder Include="Dtos\" />
     </ItemGroup>
 
 </Project>
