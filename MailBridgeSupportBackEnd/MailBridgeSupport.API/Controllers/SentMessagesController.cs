@@ -40,7 +40,7 @@ public class SentMessagesController : BaseController
         _sentMessagesService = sentMessagesService;
     }
 
-    [HttpPost("/send-message")]
+    [HttpPost("send-message")]
     public async Task<IActionResult> SendMessage([FromBody] SentMessageRequest request)
     {
         var result = SentMessage.Create(
@@ -65,7 +65,7 @@ public class SentMessagesController : BaseController
         return Ok("Message was sent))");
     }
 
-    [HttpGet("/get-last-messages")]
+    [HttpGet("get-last-messages")]
     public async Task<IActionResult> GetLastMessages()
     {
         var resultMessages = await _sentMessagesService.GetLastSentMessagesAsync(_imapOptions);
@@ -77,11 +77,11 @@ public class SentMessagesController : BaseController
         return Ok(resultMessages.Value);
     }
 
-    [HttpGet("/get-messages-from-requester")]
+    [HttpGet("get-messages-from-requester")]
     public async Task<IActionResult> GetMessagesFromRequester([FromQuery] MessagesFromRequesterRequest request)
     {
-
-        var resultMessages = await _sentMessagesService.GetByRequesterEmailAsync(_imapOptions, request.UserEmail);
+        var queryString = HttpContext.Request;
+        var resultMessages = await _sentMessagesService.GetByRequesterEmailAsync(_imapOptions, request.Requester);
         if (resultMessages.IsFailure)
         {
             _logger.LogError("{error}", resultMessages.Error);

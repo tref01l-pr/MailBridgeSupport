@@ -1,30 +1,62 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+  <Suspense>
+    <template #default>
+      <div v-if="!isLoaded">
+        <Header/>
+        <div class="loader">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div v-else>
+        <Header/>
+        <router-view/>
+      </div>
+    </template>
+    <template #fallback>
+      <div>Something went wrong</div>
+    </template>
+  </Suspense>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+<script setup>
+
+import {onBeforeMount, onMounted, ref, watch} from 'vue';
+import { useAuthStore } from './stores/AuthStore.js';
+import Header from './components/Header/Header.vue';
+import router from "./router.js";
+
+let isLoaded = ref(false);
+
+const authStore = useAuthStore();
+
+watch(() => authStore.getHasInitialization, () => {
+  isLoaded.value = authStore.getHasInitialization;
+})
+
+/*import {onBeforeMount, onMounted, ref, watch} from 'vue';
+import { useAuthStore } from './stores/AuthStore.js';
+import Header from './components/Header/Header.vue';
+import router from "./router.js";
+
+let isLoaded = ref(false);
+
+watch(() => useAuthStore.getHasInitialization, () => {
+  console.log('12312312312332');
+  isLoaded.value = useAuthStore.getHasInitialization;
+  console.log('isLoaded', isLoaded.value);
+})*/
+
+/*onBeforeMount(async () => {
+  console.log('Before loading');
+  isLoaded.value = await useAuthStore().authorization();
+  console.log('After loading ');
+
+  await router.push("/log-in");
+  console.log('After loading');
+});*/
+</script>
+
+<style src="./css/main.scss"></style>

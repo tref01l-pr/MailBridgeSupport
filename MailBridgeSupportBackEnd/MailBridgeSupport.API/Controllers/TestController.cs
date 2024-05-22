@@ -5,10 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace MailBridgeSupport.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class TestController : ControllerBase
+public class TestController : BaseController
 {
-    [HttpGet("/GgetHeaders")]
+    /*[HttpGet("GgetHeaders")]
     public async Task<IActionResult> GetHeaders()
     {
         var headers = HttpContext.Request.Headers;
@@ -19,7 +18,7 @@ public class TestController : ControllerBase
     }
     
     [Authorize]
-    [HttpGet("/GggetHeaders")]
+    [HttpGet("GggetHeaders")]
     public async Task<IActionResult> GetHeaderss()
     {
         var headers = HttpContext.Request.Headers;
@@ -27,5 +26,5 @@ public class TestController : ControllerBase
         var asdf = HttpContext.User.Claims;
         var asd = HttpContext.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
         return Ok("Success");
-    }
+    }*/
 }

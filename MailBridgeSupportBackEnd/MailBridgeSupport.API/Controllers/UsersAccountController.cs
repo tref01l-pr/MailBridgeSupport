@@ -194,7 +194,7 @@ public class UsersAccountController : BaseController
             return BadRequest(result.Error);
         }
 
-        Response.Cookies.Append("refreshtoken", refreshToken, new CookieOptions()
+        Response.Cookies.Append(DefaultAuthenticationTypes.ApplicationCookie, refreshToken, new CookieOptions()
         {
             Secure = false,
             HttpOnly = true,
@@ -203,9 +203,11 @@ public class UsersAccountController : BaseController
 
         return Ok(new TokenResponse
         {
+            Id = user.Id,
             Role = role,
             AccessToken = accessToken,
-            Nickname = user.UserName
+            Nickname = user.UserName,
+            Email = user.Email,
         });
     }
 
@@ -220,6 +222,7 @@ public class UsersAccountController : BaseController
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RefreshAccessToken()
     {
+        //Thread.Sleep(10000);
         const bool jwtTokenV2 = false;
         Result<UserInformation> userInformation;
         var refreshToken = Request.Cookies["refreshToken"];
@@ -258,9 +261,9 @@ public class UsersAccountController : BaseController
             return BadRequest("Refresh tokens not equals.");
         }
 
-        var accsessToken = JwtHelper.CreateAccessToken(userInformation.Value, _options);
+        var accessToken = JwtHelper.CreateAccessToken(userInformation.Value, _options);
 
-        var session = Session.Create(userInformation.Value.UserId, accsessToken, resultGet.Value.RefreshToken);
+        var session = Session.Create(userInformation.Value.UserId, accessToken, resultGet.Value.RefreshToken);
         if (resultGet.IsFailure)
         {
             _logger.LogError("{error}", resultGet.Error);
@@ -274,11 +277,45 @@ public class UsersAccountController : BaseController
             return BadRequest(result.Error);
         }
 
+        var user = await _userManager.FindByIdAsync(userInformation.Value.UserId.ToString());
+
+        if (user is null)
+        {
+            _logger.LogError("error", "No user with that id");
+            return BadRequest("No user with that id");
+        }
+
         return Ok(new TokenResponse
         {
+            Id = userInformation.Value.UserId,
             Role = userInformation.Value.Role,
-            AccessToken = accsessToken,
-            Nickname = userInformation.Value.Nickname
+            AccessToken = accessToken,
+            Nickname = userInformation.Value.Nickname,
+            Email = user.Email,
         });
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TokenResponse))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout()
+    {
+        string? refreshToken = Request.Cookies[DefaultAuthenticationTypes.ApplicationCookie];
+
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return BadRequest("Your refresh token not exist");
+        }
+
+        var result = await _sessionsRepository.Delete(UserId.Value);
+        if (result.IsFailure)
+        {
+            return BadRequest(result.Error);
+        }
+
+        Response.Cookies.Delete(DefaultAuthenticationTypes.ApplicationCookie);
+
+        return Ok("Success");
     }
 }
