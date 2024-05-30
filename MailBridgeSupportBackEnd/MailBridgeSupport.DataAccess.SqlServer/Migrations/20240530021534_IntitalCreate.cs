@@ -51,6 +51,24 @@ namespace MailBridgeSupport.DataAccess.SqlServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ReceivedMessages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MsgId = table.Column<int>(type: "int", nullable: false),
+                    From = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    To = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Subject = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Date = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReceivedMessages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SentMessages",
                 columns: table => new
                 {
@@ -224,6 +242,12 @@ namespace MailBridgeSupport.DataAccess.SqlServer.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReceivedMessages_MsgId",
+                table: "ReceivedMessages",
+                column: "MsgId",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -243,6 +267,9 @@ namespace MailBridgeSupport.DataAccess.SqlServer.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "ReceivedMessages");
 
             migrationBuilder.DropTable(
                 name: "SentMessages");

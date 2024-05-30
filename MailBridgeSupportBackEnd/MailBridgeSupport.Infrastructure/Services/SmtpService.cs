@@ -23,7 +23,7 @@ public class SmtpService : ISmtpService
             email.To.Add(new MailboxAddress("", sentMessage.To));
 
             email.Subject = sentMessage.Subject;
-            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { 
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Text) { 
                 Text = sentMessage.Body
             };
 

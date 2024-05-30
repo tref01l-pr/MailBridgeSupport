@@ -10,6 +10,7 @@ public class DataAccessMappingProfile : Profile
     {
         CreateMap<UserEntity, User>().ReverseMap();
         CreateMap<SentMessageEntity, SentMessage>().ReverseMap();
+        CreateMap<ReceivedMessageEntity, ReceivedMessage>().ReverseMap();
         CreateMap<SessionEntity, Session>().ReverseMap();
     }
 }

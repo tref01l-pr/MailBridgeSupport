@@ -181,8 +181,127 @@ public class ImapService : IImapService
             return Result.Failure<List<string>>(e.Message);
         }
     }
-    
-    
-    
-    
+
+    //TODO: переделать
+    public async Task<Result<List<ReceivedMessage>>> GetNewMessages(ImapOptions imapOptions, int numberOfMessages)
+    {
+        try
+        {
+            using (var client = new ImapClient ()) {
+
+                await client.ConnectAsync("imap.gmail.com", imapOptions.Port, true);
+                await client.AuthenticateAsync(imapOptions.User, imapOptions.Password);
+
+                var inbox = client.Inbox;
+                await inbox.OpenAsync(FolderAccess.ReadOnly);
+
+                // Get all messages sorted by date (newest first)
+
+                if (inbox.Count == numberOfMessages)
+                {
+                    return Result.Success<List<ReceivedMessage>>(new List<ReceivedMessage>());
+                }
+                else if (inbox.Count < numberOfMessages)
+                {
+                    return Result.Failure<List<ReceivedMessage>>("Fatal Error inbox messages < numberOfMessages");
+                }
+                
+                var allMessages = 
+                    (await inbox.FetchAsync(0, -1, MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure))
+                    .OrderByDescending(summary => summary.Date).ToList();
+
+                var newMessages = new List<ReceivedMessage>();
+
+                for (int i = 0; i < allMessages.Count - numberOfMessages; i++)
+                {
+                    var sender = allMessages[i].Envelope.From.Mailboxes.Single().Address;
+                    if (string.IsNullOrEmpty(sender))
+                    {
+                        return Result.Failure<List<ReceivedMessage>>("Sender name is empty!!!");
+                    }
+                    
+                    var text = (TextPart)(await inbox.GetBodyPartAsync(allMessages[i].UniqueId, allMessages[i].TextBody));
+                    var receivedMessage = ReceivedMessage.Create(
+                        allMessages[i].UniqueId.ToString(),
+                        allMessages[i].Envelope.From.Mailboxes.Single().Address,
+                        allMessages[i].Envelope.To.Mailboxes.Single().Address,
+                        allMessages[i].Envelope.Subject,
+                        text.Text,
+                        allMessages[i].Date);
+
+                    if (receivedMessage.IsFailure)
+                    {
+                        return Result.Failure<List<ReceivedMessage>>(receivedMessage.Error);
+                    }
+                    
+                    newMessages.Add(receivedMessage.Value);
+                }
+
+                await client.DisconnectAsync(true);
+                return newMessages;
+            }
+        }
+        catch (Exception e)
+        {
+            return Result.Failure<List<ReceivedMessage>>(e.Message);
+        }
+    }
+
+    public async Task<Result<List<SentMessage>>> GetAllSentMessages(ImapOptions imapOptions)
+    {
+        try
+        {
+            using (var client = new ImapClient ()) {
+
+                await client.ConnectAsync("imap.gmail.com", imapOptions.Port, true);
+                await client.AuthenticateAsync(imapOptions.User, imapOptions.Password);
+
+                var sentFolder = client.GetFolder(SpecialFolder.Sent);
+                await sentFolder.OpenAsync(FolderAccess.ReadOnly);
+                
+                var allMessages = 
+                    (await sentFolder.FetchAsync(0, -1, MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure))
+                    .OrderByDescending(summary => summary.Date).ToList();
+
+                var newMessages = new List<SentMessage>();
+
+                foreach (var t in allMessages)
+                {
+                    var sender = t.Envelope.From.Mailboxes.Single().Address;
+                    if (string.IsNullOrEmpty(sender))
+                    {
+                        return Result.Failure<List<SentMessage>>("Sender name is empty!!!");
+                    }
+
+                    string text = "null";
+                    
+                    if (t.TextBody is not null)
+                    {
+                        text = ((TextPart)await sentFolder.GetBodyPartAsync(t.UniqueId, t.TextBody)).ToString();
+                    }
+                    
+                    var sentMessage = SentMessage.Create(
+                        Guid.Empty, 
+                        t.Envelope.To.Mailboxes.Single().Address,
+                        t.Envelope.Subject,
+                        text,
+                        t.Date);
+
+                    if (sentMessage.IsFailure)
+                    {
+                        return Result.Failure<List<SentMessage>>(sentMessage.Error);
+                    }
+                    
+                    newMessages.Add(sentMessage.Value);
+                }
+
+                await client.DisconnectAsync(true);
+                return newMessages;
+            }
+        }
+        catch (Exception e)
+        {
+            return Result.Failure<List<SentMessage>>(e.Message);
+        }
+    }
 }

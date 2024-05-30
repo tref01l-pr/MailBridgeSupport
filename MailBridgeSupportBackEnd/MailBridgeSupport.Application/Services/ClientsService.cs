@@ -13,6 +13,7 @@ public class ClientsService : IClientMessagesService
     {
         _usersRepository = usersRepository;
     }
+
     public async Task<Result<User>> GetUserInfoAsync(Guid userId)
     {
         var user = await _usersRepository.GetByIdAsync(userId);

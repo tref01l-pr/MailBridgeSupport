@@ -20,7 +20,7 @@ using Swashbuckle.AspNetCore.Filters;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +30,8 @@ public class Program
             builder.Configuration.GetSection(SmtpOptions.Smtp));
         builder.Services.Configure<ImapOptions>(
             builder.Configuration.GetSection(ImapOptions.Imap));
+        builder.Services.Configure<GoogleApiOptions>(
+            builder.Configuration.GetSection(GoogleApiOptions.GoogleApi));
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -63,7 +65,7 @@ public class Program
             })
             .AddEntityFrameworkStores<MailBridgeSupportDbContext>()
             .AddDefaultTokenProviders();
-        
+
         builder.Services.Configure<IdentityOptions>(options =>
         {
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromSeconds(30);
@@ -77,14 +79,16 @@ public class Program
             config.AddProfile<DataAccessMappingProfile>();
         });
 
+        builder.Services.AddTransient<Seed>();
         builder.Services.AddScoped<IImapService, ImapService>();
         builder.Services.AddScoped<ISmtpService, SmtpService>();
         builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
         builder.Services.AddScoped<ISentMessagesRepository, SentMessagesRepository>();
+        builder.Services.AddScoped<IReceivedMessagesRepository, ReceivedMessagesRepository>();
         builder.Services.AddScoped<ISessionsRepository, SessionsRepository>();
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
         builder.Services.AddScoped<IClientMessagesService, ClientsService>();
-        builder.Services.AddScoped<ISentMessagesService, SentMessagesService>();
+        builder.Services.AddScoped<IMessagesService, MessagesService>();
         builder.Services.AddScoped<ISystemAdminsService, SystemAdminsService>();
 
 
@@ -126,6 +130,20 @@ public class Program
 
 
         var app = builder.Build();
+
+        if (args.Length == 1 && args[0].ToLower() == "--seeddata")
+            await SeedData(app);
+
+        async Task SeedData(IHost app)
+        {
+            var scopedFactory = app.Services.GetService<IServiceScopeFactory>();
+
+            using (var scope = scopedFactory.CreateScope())
+            {
+                var service = scope.ServiceProvider.GetService<Seed>();
+                await service.SeedDataContextAsync();
+            }
+        }
 
         if (app.Environment.IsDevelopment())
         {

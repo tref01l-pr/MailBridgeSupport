@@ -20,7 +20,7 @@ public class SentMessagesController : BaseController
     private readonly ImapOptions _imapOptions;
     private readonly IImapService _imapService;
     private readonly ISmtpService _smtpService;
-    private readonly ISentMessagesService _sentMessagesService;
+    private readonly IMessagesService _messagesService;
 
     public SentMessagesController(
         ILogger<SentMessagesController> logger,
@@ -29,7 +29,7 @@ public class SentMessagesController : BaseController
         IOptions<ImapOptions> imapOptions,
         IImapService imapService,
         ISmtpService smtpService,
-        ISentMessagesService sentMessagesService)
+        IMessagesService messagesService)
     {
         _logger = logger;
         _mapper = mapper;
@@ -37,17 +37,23 @@ public class SentMessagesController : BaseController
         _imapOptions = imapOptions.Value;
         _imapService = imapService;
         _smtpService = smtpService;
-        _sentMessagesService = sentMessagesService;
+        _messagesService = messagesService;
     }
 
     [HttpPost("send-message")]
     public async Task<IActionResult> SendMessage([FromBody] SentMessageRequest request)
     {
+        if (UserId.Value == Guid.Empty)
+        {
+            return BadRequest("Incorrect UserId. It cannot be empty");
+        }
+
         var result = SentMessage.Create(
             UserId.Value,
             request.To,
             request.Subject,
-            request.Body);
+            request.Body,
+            DateTimeOffset.Now);
 
         if (result.IsFailure)
         {
@@ -55,7 +61,7 @@ public class SentMessagesController : BaseController
             return BadRequest(result.Error);
         }
 
-        var sentMessage = await _sentMessagesService.SendMessageAsync(_smtpOptions, result.Value);
+        var sentMessage = await _messagesService.SendMessageAsync(_smtpOptions, result.Value);
         if (sentMessage.IsFailure)
         {
             _logger.LogError("{errors}", sentMessage.Error);
@@ -68,7 +74,7 @@ public class SentMessagesController : BaseController
     [HttpGet("get-last-messages")]
     public async Task<IActionResult> GetLastMessages()
     {
-        var resultMessages = await _sentMessagesService.GetLastSentMessagesAsync(_imapOptions);
+        var resultMessages = await _messagesService.GetLastMessagesAsync(_imapOptions);
         if (resultMessages.IsFailure)
         {
             return BadRequest(resultMessages.Error);
@@ -81,7 +87,7 @@ public class SentMessagesController : BaseController
     public async Task<IActionResult> GetMessagesFromRequester([FromQuery] MessagesFromRequesterRequest request)
     {
         var queryString = HttpContext.Request;
-        var resultMessages = await _sentMessagesService.GetByRequesterEmailAsync(_imapOptions, request.Requester);
+        var resultMessages = await _messagesService.GetByRequesterEmailAsync(_imapOptions, request.Requester);
         if (resultMessages.IsFailure)
         {
             _logger.LogError("{error}", resultMessages.Error);

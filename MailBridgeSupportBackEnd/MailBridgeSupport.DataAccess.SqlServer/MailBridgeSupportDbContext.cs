@@ -11,8 +11,10 @@ public class MailBridgeSupportDbContext : IdentityDbContext<UserEntity, Identity
         : base(options)
     {
     }
-    
+
     public DbSet<SentMessageEntity> SentMessages { get; set; }
+
+    public DbSet<ReceivedMessageEntity> ReceivedMessages { get; set; }
     public DbSet<SessionEntity> Sessions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)

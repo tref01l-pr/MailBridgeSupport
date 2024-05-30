@@ -8,11 +8,12 @@ public class SentMessage
     public const int MaxEmailLength = 320;
     public const int MaxSubjectLength = 500;
     public const int MaxBodyLength = 1500;
+
     private SentMessage(
-        int id, 
+        int id,
         Guid userId,
-        string to, 
-        string subject, 
+        string to,
+        string subject,
         string body,
         DateTimeOffset date)
     {
@@ -23,7 +24,7 @@ public class SentMessage
         Body = body;
         Date = date;
     }
-    
+
     public int Id { get; set; }
     public Guid UserId { get; set; }
     public string To { get; set; }
@@ -31,26 +32,19 @@ public class SentMessage
     public string Body { get; set; }
     public DateTimeOffset Date { get; set; }
 
-   
 
     public static Result<SentMessage> Create(
         Guid userId,
         string to,
         string subject,
-        string body)
+        string body,
+        DateTimeOffset date)
     {
         Result failure = Result.Success();
 
-        if (userId == Guid.Empty)
-        {
-            failure = Result.Failure<Session>($"{nameof(userId)} is not be empty!");
-        }
-        
         if (string.IsNullOrWhiteSpace(to))
         {
-            failure = Result.Combine(
-                failure,
-                Result.Failure<SentMessage>($"SentMessage {nameof(to)} can't be null or white space"));
+            failure = Result.Failure<SentMessage>($"SentMessage {nameof(to)} can't be null or white space");
         }
         else if (!IsValidEmail(to))
         {
@@ -75,9 +69,10 @@ public class SentMessage
         {
             failure = Result.Combine(
                 failure,
-                Result.Failure<SentMessage>($"SentMessage {nameof(subject)} can`t be more than {MaxSubjectLength} chars"));
+                Result.Failure<SentMessage>(
+                    $"SentMessage {nameof(subject)} can`t be more than {MaxSubjectLength} chars"));
         }
-        
+
         if (string.IsNullOrWhiteSpace(body))
         {
             failure = Result.Combine(
@@ -91,6 +86,13 @@ public class SentMessage
                 Result.Failure<SentMessage>($"SentMessage {nameof(body)} can`t be more than {MaxBodyLength} chars"));
         }
 
+        if (date > DateTimeOffset.Now)
+        {
+            failure = Result.Combine(
+                failure,
+                Result.Failure<SentMessage>($"SentMessage {nameof(date)} can`t be > than DateTimeOffset.Now"));
+        }
+
         if (failure.IsFailure)
         {
             return Result.Failure<SentMessage>(failure.Error);
@@ -102,9 +104,9 @@ public class SentMessage
             to,
             subject,
             body,
-            DateTimeOffset.Now);
+            date);
     }
-    
+
     private static bool IsValidEmail(string email)
     {
         try

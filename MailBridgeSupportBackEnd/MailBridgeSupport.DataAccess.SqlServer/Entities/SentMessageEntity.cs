@@ -6,14 +6,19 @@ namespace MailBridgeSupport.DataAccess.SqlServer.Entities;
 public class SentMessageEntity
 {
     public int Id { get; set; }
+
     public Guid UserId { get; set; }
+
     public string To { get; set; }
+
     public string Subject { get; set; }
+
     public string Body { get; set; }
+
     public DateTimeOffset Date { get; set; }
 }
 
-public class CourseEntityConfiguration : IEntityTypeConfiguration<SentMessageEntity>
+public class SentMessageEntityConfiguration : IEntityTypeConfiguration<SentMessageEntity>
 {
     public void Configure(EntityTypeBuilder<SentMessageEntity> builder)
     {
@@ -21,7 +26,7 @@ public class CourseEntityConfiguration : IEntityTypeConfiguration<SentMessageEnt
 
         builder.Property(x => x.UserId)
             .IsRequired(true);
-        
+
         builder.Property(x => x.To)
             .IsRequired(true);
 
@@ -30,7 +35,7 @@ public class CourseEntityConfiguration : IEntityTypeConfiguration<SentMessageEnt
 
         builder.Property(x => x.Body)
             .IsRequired(true);
-        
+
         builder.Property(x => x.Date)
             .IsRequired(true);
     }

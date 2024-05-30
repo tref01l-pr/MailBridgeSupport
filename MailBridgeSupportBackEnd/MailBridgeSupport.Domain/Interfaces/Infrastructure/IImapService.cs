@@ -13,6 +13,10 @@ public interface IImapService
     Task<Result<List<ImapMessage>>> GetLastMessage(ImapOptions imapOptions);
 
     Task<Result<List<ImapMessage>>> GetMessagesFromRequester(ImapOptions imapOptions, string email);
-    
-    Task<Result<List<string>>> GetMessagesBody(ImapOptions imapOptions, Dictionary<string, IMessageSummary> allMessages);
+
+    Task<Result<List<string>>>
+        GetMessagesBody(ImapOptions imapOptions, Dictionary<string, IMessageSummary> allMessages);
+
+    Task<Result<List<ReceivedMessage>>> GetNewMessages(ImapOptions imapOptions, int numberOfMessages);
+    Task<Result<List<SentMessage>>> GetAllSentMessages(ImapOptions imapOptions);
 }
