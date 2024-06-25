@@ -1,6 +1,6 @@
 ﻿namespace MailBridgeSupport.Domain.Models;
 
-public enum SentMessageStatus
+public enum MessageStatus
 {
     Question,
     Answer

@@ -75,7 +75,7 @@ public class ImapService : IImapService
                             message.Envelope.Subject,
                             text.Text,
                             message.Date,
-                            SentMessageStatus.Question);
+                            MessageStatus.Question);
 
                         if (imapMessage.IsFailure)
                         {
@@ -132,7 +132,7 @@ public class ImapService : IImapService
                         message.Envelope.Subject,
                         text.Text,
                         message.Date,
-                        SentMessageStatus.Question);
+                        MessageStatus.Question);
 
                     if (imapMessage.IsFailure)
                     {

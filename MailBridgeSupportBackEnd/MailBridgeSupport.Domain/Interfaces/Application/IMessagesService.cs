@@ -11,4 +11,5 @@ public interface IMessagesService
     Task<Result<ImapMessage[]>> GetLastMessagesAsync(ImapOptions imapOptions);
 
     Task<Result<ImapMessage[]>> GetByRequesterEmailAsync(ImapOptions imapOptions, string email);
+    Task<Result<bool>> RemoveKeyAsync();
 }

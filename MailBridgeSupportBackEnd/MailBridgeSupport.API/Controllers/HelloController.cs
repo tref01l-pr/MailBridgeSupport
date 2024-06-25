@@ -9,6 +9,6 @@ public class HelloController : ControllerBase
     /*[HttpGet("/hello")]
     public async Task<IActionResult> GetHello()
     {
-        return Ok("Hello");
+        return Ok("Hello world");
     }*/
 }

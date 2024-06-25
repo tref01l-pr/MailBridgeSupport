@@ -16,6 +16,7 @@ public class MessagesService : IMessagesService
     private readonly ISentMessagesRepository _sentMessagesRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IReceivedMessagesRepository _receivedMessagesRepository;
+    private readonly ICacheRepository _cacheRepository;
 
     public MessagesService(
         IImapService imapService,
@@ -23,7 +24,8 @@ public class MessagesService : IMessagesService
         IUsersRepository usersRepository,
         ITransactionsRepository transactionsRepository,
         ISentMessagesRepository sentMessagesRepository,
-        IReceivedMessagesRepository receivedMessagesRepository)
+        IReceivedMessagesRepository receivedMessagesRepository,
+        ICacheRepository cacheRepository)
     {
         _imapService = imapService;
         _smtpService = smtpService;
@@ -31,6 +33,7 @@ public class MessagesService : IMessagesService
         _transactionsRepository = transactionsRepository;
         _sentMessagesRepository = sentMessagesRepository;
         _receivedMessagesRepository = receivedMessagesRepository;
+        _cacheRepository = cacheRepository;
     }
 
     public async Task<Result<int>> SendMessageAsync(SmtpOptions smtpOptions, SentMessage sentMessage)
@@ -76,6 +79,17 @@ public class MessagesService : IMessagesService
     public async Task<Result<ImapMessage[]>> GetLastMessagesAsync(ImapOptions imapOptions)
     {
         var newMessages = await CheckUpdates(imapOptions);
+        var cacheLastMessages = await _cacheRepository.GetLastMessagesAsync();
+        if (cacheLastMessages.IsFailure)
+        {
+            return Result.Failure<ImapMessage[]>(cacheLastMessages.Error);
+        }
+
+        if (cacheLastMessages.Value.Any())
+        {
+            return cacheLastMessages.Value.ToArray();
+        }
+
         var receivedMessageFromQuestionEmails = await _receivedMessagesRepository.GetLastReceivedMessagesAsync();
         if (receivedMessageFromQuestionEmails.IsFailure)
         {
@@ -111,7 +125,7 @@ public class MessagesService : IMessagesService
                 receivedMessage.Subject,
                 receivedMessage.Body,
                 receivedMessage.Date,
-                SentMessageStatus.Question);
+                MessageStatus.Question);
 
             if (result.IsFailure)
             {
@@ -143,7 +157,7 @@ public class MessagesService : IMessagesService
                 sentMessage.Subject,
                 sentMessage.Body,
                 sentMessage.Date,
-                SentMessageStatus.Answer);
+                MessageStatus.Answer);
 
             if (result.IsFailure)
             {
@@ -153,7 +167,16 @@ public class MessagesService : IMessagesService
             filteredSentMessages.Add(result.Value);
         }
 
-        return filteredSentMessages.OrderByDescending(u => u.Date).ToArray();
+        filteredSentMessages = filteredSentMessages.OrderByDescending(u => u.Date).ToList();
+
+        var cacheSavingResult = await _cacheRepository.SetLastMessagesAsync(filteredSentMessages.ToArray());
+
+        if (cacheSavingResult.IsFailure)
+        {
+            return Result.Failure<ImapMessage[]>(cacheSavingResult.Error);
+        }
+
+        return filteredSentMessages.ToArray();
     }
 
     public async Task<Result<ImapMessage[]>> GetByRequesterEmailAsync(ImapOptions imapOptions, string email)
@@ -186,7 +209,7 @@ public class MessagesService : IMessagesService
                 sentMessage.Subject,
                 sentMessage.Body,
                 sentMessage.Date,
-                SentMessageStatus.Answer);
+                MessageStatus.Answer);
 
             if (imapMessage.IsFailure)
             {
@@ -204,7 +227,7 @@ public class MessagesService : IMessagesService
                 receivedMessage.Subject,
                 receivedMessage.Body,
                 receivedMessage.Date,
-                SentMessageStatus.Question);
+                MessageStatus.Question);
 
             if (imapMessage.IsFailure)
             {
@@ -235,17 +258,59 @@ public class MessagesService : IMessagesService
             return Result.Success<List<ReceivedMessage>>(new List<ReceivedMessage>());
         }
 
+        var imapMessageList = new List<ImapMessage>();
+
         foreach (var message in newMessages.Value)
         {
-            var result = await _receivedMessagesRepository.CreateAsync(message);
-            if (result.IsFailure)
+            var createMessageresult = await _receivedMessagesRepository.CreateAsync(message);
+            if (createMessageresult.IsFailure)
             {
-                return Result.Failure<List<ReceivedMessage>>(result.Error);
+                return Result.Failure<List<ReceivedMessage>>(createMessageresult.Error);
             }
+
+            var imapMessage = ImapMessage.Create(
+                message.From,
+                message.From,
+                message.Subject,
+                message.Body,
+                message.Date,
+                MessageStatus.Question);
+
+            if (imapMessage.IsFailure)
+            {
+                return Result.Failure<List<ReceivedMessage>>(imapMessage.Error);
+            }
+
+            var localLastMessage = imapMessageList.FirstOrDefault(m => m.Requester == imapMessage.Value.Requester);
+
+            if (localLastMessage == null)
+            {
+                imapMessageList.Add(imapMessage.Value);
+                continue;
+            }
+
+            if (localLastMessage.Date > imapMessage.Value.Date)
+            {
+                continue;
+            }
+
+            imapMessageList.RemoveAll(m => m.Requester == imapMessage.Value.Requester);
+            imapMessageList.Add(imapMessage.Value);
         }
 
-        //TODO: set redis variable
+        var cacheResult = await _cacheRepository.UpdateLastMessagesAsync(imapMessageList.ToArray());
 
         return newMessages;
+    }
+
+    public async Task<Result<bool>> RemoveKeyAsync()
+    {
+        var result = await _cacheRepository.RemoveKey();
+        if (result.IsFailure)
+        {
+            return Result.Failure<bool>(result.Error);
+        }
+
+        return result.Value;
     }
 }

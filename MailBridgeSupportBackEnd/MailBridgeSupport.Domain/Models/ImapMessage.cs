@@ -6,23 +6,28 @@ namespace MailBridgeSupport.Domain.Models;
 
 public class ImapMessage
 {
+    public const int MaxEmailLength = 320;
+    public const int MaxSubjectLength = 5000;
+    public const int MaxBodyLength = 15000;
+
     public ImapMessage(
         string requester,
         string from,
         string subject,
         string body,
         DateTimeOffset date,
-        SentMessageStatus sentMessageStatus)
+        MessageStatus messageStatus)
     {
         Requester = requester;
         From = from;
         Subject = subject;
         Body = body;
         Date = date;
-        SentMessageStatus = sentMessageStatus;
+        MessageStatus = messageStatus;
     }
 
     public string Requester { get; set; }
+
     public string From { get; set; }
 
     public string Subject { get; set; }
@@ -31,7 +36,7 @@ public class ImapMessage
 
     public DateTimeOffset Date { get; set; }
 
-    public SentMessageStatus SentMessageStatus { get; set; }
+    public MessageStatus MessageStatus { get; set; }
 
     public static Result<ImapMessage> Create(
         string requester,
@@ -39,7 +44,7 @@ public class ImapMessage
         string subject,
         string body,
         DateTimeOffset date,
-        SentMessageStatus sentMessageStatus)
+        MessageStatus messageStatus)
     {
         Result failure = Result.Success();
 
@@ -55,10 +60,17 @@ public class ImapMessage
                 failure,
                 Result.Failure<ImapMessage>($"ImapMessage {nameof(requester)} is not an email"));
         }
+        else if (requester.Length > MaxEmailLength)
+        {
+            failure = Result.Combine(
+                failure,
+                Result.Failure<ImapMessage>(
+                    $"ReceivedMessage {nameof(requester)} can`t be more than {MaxEmailLength} chars"));
+        }
 
         if (string.IsNullOrWhiteSpace(from))
         {
-            if (sentMessageStatus == SentMessageStatus.Answer)
+            if (messageStatus == MessageStatus.Answer)
             {
                 from = "deleted@account.com";
             }
@@ -74,6 +86,37 @@ public class ImapMessage
             failure = Result.Combine(
                 failure,
                 Result.Failure<ImapMessage>($"ImapMessage {nameof(from)} is not an email"));
+        }
+        else if (from.Length > MaxEmailLength)
+        {
+            failure = Result.Combine(
+                failure,
+                Result.Failure<ImapMessage>(
+                    $"ImapMessage {nameof(from)} can`t be more than {MaxEmailLength} chars"));
+        }
+
+        if (string.IsNullOrWhiteSpace(subject))
+        {
+            subject = "null";
+        }
+        else if (subject.Length > MaxSubjectLength)
+        {
+            failure = Result.Combine(
+                failure,
+                Result.Failure<ImapMessage>(
+                    $"ImapMessage {nameof(subject)} can`t be more than {MaxSubjectLength} chars"));
+        }
+
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            body = "null";
+        }
+        else if (body.Length > MaxBodyLength)
+        {
+            failure = Result.Combine(
+                failure,
+                Result.Failure<ImapMessage>(
+                    $"ImapMessage {nameof(body)} can`t be more than {MaxBodyLength} chars"));
         }
 
         if (DateTimeOffset.Now < date)
@@ -94,7 +137,7 @@ public class ImapMessage
             subject,
             body,
             date,
-            sentMessageStatus);
+            messageStatus);
     }
 
     private static bool IsValidEmail(string email)

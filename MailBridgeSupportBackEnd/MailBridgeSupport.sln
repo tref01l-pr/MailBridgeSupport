@@ -10,6 +10,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailBridgeSupport.Applicati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailBridgeSupport.Infrastructure", "MailBridgeSupport.Infrastructure\MailBridgeSupport.Infrastructure.csproj", "{4DE2C43B-48FC-4FD4-946D-C17E2501C7D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailBridgeSupport.IntegrationalTests", "MailBridgeSupport.IntegrationalTests\MailBridgeSupport.IntegrationalTests.csproj", "{AA521662-2DD5-45E3-9F5A-6522CADAC9A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailBridgeSupport.UnitTests", "MailBridgeSupport.UnitTests\MailBridgeSupport.UnitTests.csproj", "{877A6F2B-37D7-44DB-811F-26433A12CC9A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +40,13 @@ Global
 		{4DE2C43B-48FC-4FD4-946D-C17E2501C7D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DE2C43B-48FC-4FD4-946D-C17E2501C7D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4DE2C43B-48FC-4FD4-946D-C17E2501C7D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA521662-2DD5-45E3-9F5A-6522CADAC9A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA521662-2DD5-45E3-9F5A-6522CADAC9A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA521662-2DD5-45E3-9F5A-6522CADAC9A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA521662-2DD5-45E3-9F5A-6522CADAC9A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{877A6F2B-37D7-44DB-811F-26433A12CC9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{877A6F2B-37D7-44DB-811F-26433A12CC9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{877A6F2B-37D7-44DB-811F-26433A12CC9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{877A6F2B-37D7-44DB-811F-26433A12CC9A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

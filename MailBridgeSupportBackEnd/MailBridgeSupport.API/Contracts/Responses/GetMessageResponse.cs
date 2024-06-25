@@ -14,5 +14,5 @@ public class GetMessageResponse
 
     public DateTimeOffset Date { get; set; }
 
-    public SentMessageStatus SentMessageStatus { get; set; }
+    public MessageStatus MessageStatus { get; set; }
 }

@@ -87,10 +87,10 @@ public class Program
         builder.Services.AddScoped<IReceivedMessagesRepository, ReceivedMessagesRepository>();
         builder.Services.AddScoped<ISessionsRepository, SessionsRepository>();
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+        builder.Services.AddScoped<ICacheRepository, CacheRepository>();
         builder.Services.AddScoped<IClientMessagesService, ClientsService>();
         builder.Services.AddScoped<IMessagesService, MessagesService>();
         builder.Services.AddScoped<ISystemAdminsService, SystemAdminsService>();
-
 
         builder.Services.AddAuthentication(options =>
             {
@@ -115,6 +115,14 @@ public class Program
             });
 
         builder.Services.AddAuthorization();
+
+        builder.Services.AddStackExchangeRedisCache(redisOptions =>
+        {
+            string? connection = builder.Configuration
+                .GetConnectionString("Redis");
+
+            redisOptions.Configuration = connection;
+        });
 
         builder.Services.AddCors(options =>
         {
@@ -151,6 +159,19 @@ public class Program
             app.UseSwaggerUI();
         }
 
+        using (var scope = app.Services.CreateScope())
+        {
+            var messagesService = scope.ServiceProvider.GetRequiredService<IMessagesService>();
+            var result = await messagesService.RemoveKeyAsync();
+            if (result.IsSuccess)
+            {
+                Console.WriteLine("Cache key deleted successfully");
+            }
+            else
+            {
+                Console.WriteLine($"Failed to delete cache key: {result.Error}");
+            }
+        }
 
         app.UseHttpsRedirection();
 
